@@ -17,6 +17,7 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 async function run() {
     try {
         const categoryCollection = client.db('wizResale').collection('categories');
+        const productCollection = client.db('wizResale').collection('products');
 
 
         app.get('/categories', async (req, res) => {
@@ -24,7 +25,13 @@ async function run() {
             const cursor = categoryCollection.find(query);
             const categories = await cursor.toArray();
             res.send(categories);
-            console.log(categories)
+        })
+        app.get('/categories/:name', async (req, res) => {
+            const name = req.params.name;
+            const query = { category_name: name };
+            const cursor = productCollection.find(query);
+            const products = await cursor.toArray();
+            res.send(products);
         })
 
 
