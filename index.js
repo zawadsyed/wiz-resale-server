@@ -18,6 +18,7 @@ async function run() {
     try {
         const categoryCollection = client.db('wizResale').collection('categories');
         const productCollection = client.db('wizResale').collection('products');
+        const userCollection = client.db('wizResale').collection('users');
 
 
         app.get('/categories', async (req, res) => {
@@ -34,6 +35,12 @@ async function run() {
             res.send(products);
         })
 
+        app.post('/users', async (req, res) => {
+            const user = req.body;
+            const result = await userCollection.insertOne(user);
+            res.send(result);
+            console.log(result)
+        })
 
 
     }
