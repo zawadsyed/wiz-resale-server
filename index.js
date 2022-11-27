@@ -15,6 +15,23 @@ app.use(express.json());
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster-01.qwgvzig.mongodb.net/?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 
+
+function verifyJWT(req, res, next) {
+    const authHeader = req.headers.authorization;
+    console.log(authHeader);
+    if (!authHeader) {
+        return res.status(401).send('Unauthorized Access');
+    }
+    const token = authHeader.split(' ')[1];
+    jwt.verify(token, process.env.ACCESS_TOKEN, function (error, decoded) {
+        if (error) {
+            res.status(403).send({ message: 'Forbidden Access' })
+        }
+        req.decoded = decoded;
+        next()
+    })
+}
+
 async function run() {
     try {
         const categoryCollection = client.db('wizResale').collection('categories');
@@ -37,17 +54,20 @@ async function run() {
         })
 
         app.get('/users', async (req, res) => {
-            let query = {};
-            if (req.query.role) {
-                query = {
-                    role: req.query.role
-                }
+            const query = {
+                role: req.query.role,
             }
             const cursor = userCollection.find(query);
             const users = await cursor.toArray();
             res.send(users);
         })
 
+        app.get('/users/admin/:email', async (req, res) => {
+            const email = req.params.email;
+            const query = { email: email }
+            const user = await userCollection.findOne(query);
+            res.send({ isAdmin: user.role === 'admin' })
+        })
 
         app.get('/jwt', async (req, res) => {
             const email = req.query.email;
@@ -60,6 +80,8 @@ async function run() {
             }
             res.status(403).send({ accessToken: '' })
         })
+
+
         app.post('/users', async (req, res) => {
             const user = req.body;
             const result = await userCollection.insertOne(user);
