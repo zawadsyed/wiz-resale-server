@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const { MongoClient, ServerApiVersion } = require('mongodb');
+const jwt = require('jsonwebtoken');
 require('dotenv').config();
 const app = express();
 const port = process.env.PORT || 5000;
@@ -35,11 +36,23 @@ async function run() {
             res.send(products);
         })
 
+        app.get('/users', async (req, res) => {
+            let query = {};
+            if (req.query.role) {
+                query = {
+                    role: req.query.role
+                }
+            }
+            const cursor = userCollection.find(query);
+            const users = await cursor.toArray();
+            res.send(users);
+        })
+
+
         app.post('/users', async (req, res) => {
             const user = req.body;
             const result = await userCollection.insertOne(user);
             res.send(result);
-            console.log(result)
         })
 
 
