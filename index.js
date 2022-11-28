@@ -39,6 +39,34 @@ async function run() {
         const userCollection = client.db('wizResale').collection('users');
 
 
+        const verifyAdmin = async (req, res, next) => {
+            const decodedEmail = req.decoded.email;
+            const query = { email: decodedEmail };
+            const user = await userCollection.findOne(query);
+
+            if (user?.role !== 'admin') {
+                return res.status(403).send({ message: 'forbidden access' })
+            }
+            next();
+        }
+
+
+        const verifySeller = async (req, res, next) => {
+            const decodedEmail = req.decoded.email;
+            const query = { email: decodedEmail };
+            const user = await userCollection.findOne(query);
+
+            if (user?.role !== 'seller') {
+                return res.status(403).send({ message: 'forbidden access' })
+            }
+            next();
+        }
+
+        app.get('/categorytitle', async (req, res) => {
+            const query = {}
+            const result = await categoryCollection.find(query).project({ category_title: 1 }).toArray();
+            res.send(result);
+        })
         app.get('/categories', async (req, res) => {
             const query = {};
             const cursor = categoryCollection.find(query);
@@ -53,7 +81,7 @@ async function run() {
             res.send(products);
         })
 
-        app.get('/users', async (req, res) => {
+        app.get('/users', verifyJWT, verifyAdmin, async (req, res) => {
             const query = {
                 role: req.query.role,
             }
@@ -85,6 +113,11 @@ async function run() {
         app.post('/users', async (req, res) => {
             const user = req.body;
             const result = await userCollection.insertOne(user);
+            res.send(result);
+        })
+        app.post('/products', verifyJWT, verifySeller, async (req, res) => {
+            const product = req.body;
+            const result = await productCollection.insertOne(product);
             res.send(result);
         })
 
