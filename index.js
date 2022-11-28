@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
 const app = express();
@@ -128,7 +128,7 @@ async function run() {
             res.send(result);
         })
 
-        app.delete('/users', verifyJWT, verifyAdmin, async (req, res) => {
+        app.delete('/users/:id', verifyJWT, verifyAdmin, async (req, res) => {
             const id = req.params.id;
             const filter = { _id: ObjectId(id) };
             const result = await userCollection.deleteOne(filter);
@@ -143,6 +143,14 @@ async function run() {
             const products = await cursor.toArray();
             res.send(products);
         })
+
+        app.delete('/my-products/:id', verifyJWT, verifySeller, async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: ObjectId(id) };
+            const result = await productCollection.deleteOne(filter);
+            res.send(result);
+        })
+
         app.post('/products', verifyJWT, verifySeller, async (req, res) => {
             const product = req.body;
             const result = await productCollection.insertOne(product);
