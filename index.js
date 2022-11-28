@@ -67,6 +67,7 @@ async function run() {
             const result = await categoryCollection.find(query).project({ category_title: 1 }).toArray();
             res.send(result);
         })
+
         app.get('/categories', async (req, res) => {
             const query = {};
             const cursor = categoryCollection.find(query);
@@ -96,6 +97,18 @@ async function run() {
             const user = await userCollection.findOne(query);
             res.send({ isAdmin: user.role === 'admin' })
         })
+        app.get('/users/seller/:email', async (req, res) => {
+            const email = req.params.email;
+            const query = { email: email }
+            const user = await userCollection.findOne(query);
+            res.send({ isAdmin: user.role === 'seller' })
+        })
+        app.get('/users/buyer/:email', async (req, res) => {
+            const email = req.params.email;
+            const query = { email: email }
+            const user = await userCollection.findOne(query);
+            res.send({ isAdmin: user.role === 'buyer' })
+        })
 
         app.get('/jwt', async (req, res) => {
             const email = req.query.email;
@@ -103,21 +116,31 @@ async function run() {
             const user = await userCollection.findOne(query);
             console.log(user);
             if (user) {
-                const token = jwt.sign({ email }, process.env.ACCESS_TOKEN, { expiresIn: '1h' });
+                const token = jwt.sign({ email }, process.env.ACCESS_TOKEN);
                 return res.send({ accessToken: token });
             }
             res.status(403).send({ accessToken: '' })
         })
-
 
         app.post('/users', async (req, res) => {
             const user = req.body;
             const result = await userCollection.insertOne(user);
             res.send(result);
         })
+
+
+        app.get('/my-products', verifyJWT, verifySeller, async (req, res) => {
+            const query = {
+                seller_email: req.query.email,
+            }
+            const cursor = productCollection.find(query);
+            const products = await cursor.toArray();
+            res.send(products);
+        })
         app.post('/products', verifyJWT, verifySeller, async (req, res) => {
             const product = req.body;
             const result = await productCollection.insertOne(product);
+            console.log(result)
             res.send(result);
         })
 
