@@ -101,13 +101,13 @@ async function run() {
             const email = req.params.email;
             const query = { email: email }
             const user = await userCollection.findOne(query);
-            res.send({ isAdmin: user.role === 'seller' })
+            res.send({ isSeller: user.role === 'seller' })
         })
         app.get('/users/buyer/:email', async (req, res) => {
             const email = req.params.email;
             const query = { email: email }
             const user = await userCollection.findOne(query);
-            res.send({ isAdmin: user.role === 'buyer' })
+            res.send({ isBuyer: user.role === 'buyer' })
         })
 
         app.get('/jwt', async (req, res) => {
@@ -128,6 +128,12 @@ async function run() {
             res.send(result);
         })
 
+        app.delete('/users', verifyJWT, verifyAdmin, async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: ObjectId(id) };
+            const result = await userCollection.deleteOne(filter);
+            res.send(result);
+        })
 
         app.get('/my-products', verifyJWT, verifySeller, async (req, res) => {
             const query = {
