@@ -103,12 +103,6 @@ async function run() {
             const user = await userCollection.findOne(query);
             res.send({ isSeller: user.role === 'seller' })
         })
-        app.get('/users/buyer/:email', async (req, res) => {
-            const email = req.params.email;
-            const query = { email: email }
-            const user = await userCollection.findOne(query);
-            res.send({ isBuyer: user.role === 'buyer' })
-        })
 
         app.get('/jwt', async (req, res) => {
             const email = req.query.email;
@@ -122,10 +116,27 @@ async function run() {
             res.status(403).send({ accessToken: '' })
         })
 
+        app.get('/users/buyer/:email', async (req, res) => {
+            const email = req.params.email;
+            const query = { email: email }
+            const user = await userCollection.findOne(query);
+            res.send({ isBuyer: user.role === 'buyer' })
+        })
+
         app.post('/users', async (req, res) => {
             const user = req.body;
-            const result = await userCollection.insertOne(user);
-            res.send(result);
+            const query = {
+                email: user.email
+            }
+            const alreadyUsers = await userCollection.find(query).toArray();
+            if (alreadyUsers.length) {
+                const message = 'There is an account already contains this email';
+                return res.send({ acknowledged: false, message });
+            }
+            else {
+                const result = await userCollection.insertOne(user);
+                res.send(result);
+            }
         })
 
         app.delete('/users/:id', verifyJWT, verifyAdmin, async (req, res) => {
@@ -144,6 +155,13 @@ async function run() {
             res.send(products);
         })
 
+        app.post('/products', verifyJWT, verifySeller, async (req, res) => {
+            const product = req.body;
+            const result = await productCollection.insertOne(product);
+            console.log(result)
+            res.send(result);
+        })
+
         app.delete('/my-products/:id', verifyJWT, verifySeller, async (req, res) => {
             const id = req.params.id;
             const filter = { _id: ObjectId(id) };
@@ -151,12 +169,7 @@ async function run() {
             res.send(result);
         })
 
-        app.post('/products', verifyJWT, verifySeller, async (req, res) => {
-            const product = req.body;
-            const result = await productCollection.insertOne(product);
-            console.log(result)
-            res.send(result);
-        })
+
 
 
     }
